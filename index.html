@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura de Código</title>
+    <!-- 1. Cargar Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Cargar Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilo base para la fuente y el fondo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #f3f4f6; /* text-gray-100 */
+        }
+        /* Clases personalizadas para transiciones suaves */
+        .view {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .view.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Estilos para el "cursor" parpadeante en el laboratorio */
+        .fake-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2em;
+            background-color: #34d399; /* emerald-400 */
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* Animación de sacudida para el quiz */
+        .animate-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+    </style>
+</head>
+<body class="h-full antialiased">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div id="app" class="container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8 min-h-full flex flex-col">
+
+        <!-- ===== CABECERA ===== -->
+        <header class="mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+                        Aventura de Código
+                    </h1>
+                    <p class="text-gray-400">Tu viaje para convertirte en desarrolladora comienza aquí.</p>
+                </div>
+                <!-- Botón de Reiniciar Progreso (útil para pruebas) -->
+                <button onclick="app.resetProgress()" class="text-xs text-gray-500 hover:text-red-400 transition-colors">
+                    Reiniciar progreso
+                </button>
+            </div>
+            
+            <!-- Barra de Progreso General -->
+            <div class="mt-6">
+                <div class="flex justify-between text-sm font-medium text-gray-300 mb-1">
+                    <span>Progreso Total</span>
+                    <span id="main-progress-text">0%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-4 shadow-inner">
+                    <div id="main-progress-bar" class="bg-gradient-to-r from-blue-500 to-emerald-500 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== VISTA DEL PANEL (DASHBOARD) ===== -->
+        <main id="dashboard-view" class="view active flex-1">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">Módulos de Aprendizaje</h2>
+            <div id="module-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Los módulos se generarán aquí con JavaScript -->
+            </div>
+        </main>
+
+        <!-- ===== VISTA DEL MÓDULO (LECCIÓN/LAB/PRUEBA) ===== -->
+        <main id="module-view" class="view flex-1 flex flex-col">
+            <!-- Contenido del módulo se generará aquí -->
+        </main>
+
+    </div>
+
+    <!-- ===== LÓGICA DE LA APLICACIÓN ===== -->
+    <script>
+        // Objeto principal de la aplicación
+        const app = {
+            // 1. ESTADO DE LA APLICACIÓN
+            // Aquí definimos la estructura de todos los módulos.
+            state: {
+                totalProgress: 0,
+                currentModuleId: null,
+                modules: [
+                    // --- MÓDULO 1 ---
+                    {
+                        id: 'm1',
+                        title: 'Módulo 1: ¡Hola, Mundo!',
+                        description: 'Aprende qué es el código y escribe tu primera línea.',
+                        icon: '👋',
+                        unlocked: true,
+                        completed: false,
+                        progress: 0,
+                        lesson: {
+                            title: 'Tu Primera Charla con la Computadora',
+                            content: `
+                                <p class="mb-4">¡Hola! Bienvenida a tu aventura. 🚀</p>
+                                <p class="mb-4">Imagina que la computadora es un robot genial, pero solo habla un idioma especial. La "programación" es simplemente aprender a hablar ese idioma para darle instrucciones.</p>
+                                <p class="mb-4">Tú eres la directora, y el robot (la computadora) hará exactamente lo que le pidas. </p>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Tu Primera "Palabra Mágica": \`print()\`</h4>
+                                <p class="mb-4">La primera palabra mágica que aprenderás es <code>print()</code>.</p>
+                                <p class="mb-4">Piensa que <code>print()</code> es como darle a tu robot un cartel y un marcador. Cualquier cosa que escribas <strong>dentro de los paréntesis y entre comillas</strong> (<code>"así"</code>), el robot lo escribirá en el cartel y lo mostrará en la pantalla para que todos lo vean. 💬</p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>print("¡Hola, me llamo Ana!")</code></pre>
+                                <p class="mb-4">¡El robot mostrará en la pantalla: <span class="text-emerald-300">¡Hola, me llamo Ana!</span></p>
+                                <p class="text-lg font-medium text-emerald-300 mt-6">¡Vamos al laboratorio a probar esta palabra mágica!</p>
+                            `
+                        },
+                        lab: {
+                            title: 'Laboratorio: Tu Primera Línea de Código',
+                            instructions: 'En la consola de abajo, usa la palabra mágica <code class="bg-gray-900 text-yellow-300 px-1 rounded">print()</code> para que la computadora muestre el mensaje <code class="bg-gray-900 text-yellow-300 px-1 rounded">"¡Hola, Mundo!"</code> (¡con comillas!).',
+                            codeTemplate: 'print("¡Hola, Mundo!")',
+                            userCode: '',
+                            success: false
+                        },
+                        quiz: {
+                            title: 'Prueba Rápida: ¡Arma los Conceptos!',
+                            instructions: 'Arrastra el concepto de la izquierda a su descripción correcta en la derecha.',
+                            answered: false,
+                            dragItems: [
+                                { id: 'q1', text: 'Programación' },
+                                { id: 'q2', text: 'Comando `print()`' }
+                            ],
+                            dropTargets: [
+                                { id: 'a1', text: '...es darle instrucciones a la computadora en su idioma.', expects: 'q1' },
+                                { id: 'a2', text: '...es la "palabra mágica" para mostrar un mensaje.', expects: 'q2' }
+                            ]
+                        }
+                    },
+                    // --- MÓDULO 2 ---
+                    {
+                        id: 'm2',
+                        title: 'Módulo 2: Cajas de Tesoros',
+                        description: 'Aprende a guardar información en "variables".',
+                        icon: '📦',
+                        unlocked: false,
+                        completed: false,
+                        progress: 0,
+                        lesson: {
+                            title: 'Cajas Mágicas para Guardar Tesoros (Variables)',
+                            content: `
+                                <p class="mb-4">¡Genial! Ya sabes cómo hacer que la computadora "hable". Pero, ¿dónde guardamos la información? ¡En <strong>variables</strong>!</p>
+                                <p class="mb-4">Piensa en una variable como una <strong>caja 📦 con una etiqueta</strong>. Puedes guardar tus "tesoros" (datos) en ella.</p>
+                                <p class="mb-4">Digamos que quieres guardar tu puntaje en un juego. Tomas una caja, le pones la etiqueta <code>puntaje</code> y guardas el número <code>100</code> adentro. </p>
+                                <p class="mb-4">En el idioma de la computadora, se escribe así (con el signo <code>=</code>):</p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>puntaje = 100</code></pre>
+                                <p class="mb-4">¡Ahora, cada vez que le digas <code>puntaje</code> a la computadora, ella sabrá que te refieres al <code>100</code> que está dentro de esa caja!</p>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">¡Imprimiendo tus Cajas!</h4>
+                                <p class="mb-4">¿Y si quieres ver qué hay en la caja? ¡Usas tu palabra mágica <code>print()</code>! Pero esta vez, escribes la etiqueta <strong>sin comillas</strong>. </p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>print(puntaje)</code></pre>
+                                <p class="mb-4">Esto no imprime la palabra "puntaje". Imprime el tesoro que está <i>dentro</i> de la caja: <span class="text-emerald-300">100</span>.</p>
+                                <p class="text-lg font-medium text-emerald-300 mt-6">¡Ve al laboratorio a crear tus propias cajas de tesoros!</p>
+                            `
+                        },
+                        lab: {
+                            title: 'Laboratorio: Crea tu Variable',
+                            instructions: '1. Crea una "caja" (variable) llamada <code class="bg-gray-900 text-yellow-300 px-1 rounded">puntaje</code> y guárdale el número <code class="bg-gray-900 text-yellow-300 px-1 rounded">100</code>.\n2. En la línea de abajo, usa <code class="bg-gray-900 text-yellow-300 px-1 rounded">print()</code> para mostrar lo que hay dentro de <code>puntaje</code>.',
+                            codeTemplate: 'puntaje = 100\nprint(puntaje)',
+                            userCode: '',
+                            success: false
+                        },
+                        quiz: {
+                            title: 'Prueba Rápida: Cajas y Etiquetas',
+                            instructions: 'Arrastra el concepto de la izquierda a su definición correcta en la derecha.',
+                            answered: false,
+                            dragItems: [
+                                { id: 'q1', text: 'Variable (ej: puntaje)' },
+                                { id: 'q2', text: 'Valor (ej: 100)' }
+                            ],
+                            dropTargets: [
+                                { id: 'a1', text: '...es la "caja" con etiqueta para guardar datos.', expects: 'q1' },
+                                { id: 'a2', text: '...es el "tesoro" que se guarda dentro de la caja.', expects: 'q2' }
+                            ]
+                        }
+                    },
+                    // --- MÓDULO 3 (NUEVO) ---
+                    {
+                        id: 'm3',
+                        title: 'Módulo 3: Comparando Tesoros',
+                        description: 'Aprende a comparar variables usando operadores.',
+                        icon: '⚖️',
+                        unlocked: false,
+                        completed: false,
+                        progress: 0,
+                        lesson: {
+                            title: 'Comparando Cajas (Operadores)',
+                            content: `
+                                <p class="mb-4">¡Ya eres experta guardando tesoros en cajas (variables)! Ahora, vamos a aprender a <strong>comparar</strong> lo que hay dentro de ellas.</p>
+                                <p class="mb-4">Primero, hay que saber que hay dos tipos principales de "tesoros":</p>
+                                <ul class="list-disc list-inside mb-4 ml-4">
+                                    <li><strong>Números:</strong> Como <code>100</code>, <code>5</code>, o <code>14</code>. (Técnicamente se llaman "integers").</li>
+                                    <li><strong>Texto:</strong> Como <code>"Ana"</code> o <code>"¡Hola!"</code>. Siempre van entre comillas. (Técnicamente se llaman "strings").</li>
+                                </ul>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Operadores Aritméticos (Mates fáciles)</h4>
+                                <p class="mb-4">Con los números, puedes hacer matemáticas. La computadora entiende estos símbolos:</p>
+                                <ul class="list-disc list-inside mb-4 ml-4">
+                                    <li><code>+</code> (Sumar)</li>
+                                    <li><code>-</code> (Restar)</li>
+                                    <li><code>*</code> (Multiplicar)</li>
+                                    <li><code>/</code> (Dividir)</li>
+                                </ul>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Operadores de Comparación (¡Lo más importante!)</h4>
+                                <p class="mb-4">Aquí está la magia. ¿Cómo "preguntamos" si una caja es igual a otra? Usamos estos símbolos.  Cuando haces una de estas preguntas, la computadora solo puede responder dos cosas: <strong>Verdadero (True)</strong> o <strong>Falso (False)</strong>.</p>
+                                <ul class="list-disc list-inside mb-4 ml-4">
+                                    <li><code>==</code> (Doble igual): Pregunta: "¿Son <strong>exactamente iguales</strong>?". (Ej: <code>5 == 5</code> es <strong>Verdadero</strong>).</li>
+                                    <li><code>!=</code> (Signo de exclamación + igual): Pregunta: "¿Son <strong>diferentes</strong>?". (Ej: <code>5 != 10</code> es <strong>Verdadero</strong>).</li>
+                                    <li><code>></code> (Mayor que): Pregunta: "¿Es el primer número <strong>mayor que</strong> el segundo?". (Ej: <code>10 > 5</code> es <strong>Verdadero</strong>).</li>
+                                    <li><code><</code> (Menor que): Pregunta: "¿Es el primer número <strong>menor que</strong> el segundo?". (Ej: <code>10 < 5</code> es <strong>Falso</strong>).</li>
+                                </ul>
+                                <p class="text-lg font-medium text-emerald-300 mt-6">¡Vamos al laboratorio a probar estas comparaciones!</p>
+                            `
+                        },
+                        lab: {
+                            title: 'Laboratorio: Comparaciones',
+                            instructions: 'Te damos <code>num1 = 10</code> y <code>num2 = 5</code>.\n1. En la primera línea, imprime la respuesta a la pregunta: ¿Es <code>num1</code> mayor que <code>num2</code>? (<code>print(num1 > num2)</code>)\n2. En la segunda línea, imprime la respuesta a: ¿Es <code>num1</code> igual a <code>num2</code>? (<code>print(num1 == num2)</code>)',
+                            codeTemplate: 'num1 = 10\nnum2 = 5\nprint(num1 > num2)\nprint(num1 == num2)',
+                            userCode: '',
+                            success: false
+                        },
+                        quiz: {
+                            title: 'Prueba Rápida: ¿Qué significa?',
+                            instructions: 'Arrastra el operador a la pregunta correcta que representa.',
+                            answered: false,
+                            dragItems: [
+                                { id: 'q1', text: '==' },
+                                { id: 'q2', text: '!=' },
+                                { id: 'q3', text: '>' }
+                            ],
+                            dropTargets: [
+                                { id: 'a1', text: '...pregunta si algo es "mayor que".', expects: 'q3' },
+                                { id: 'a2', text: '...pregunta si dos cosas son "exactamente iguales".', expects: 'q1' },
+                                { id: 'a3', text: '...pregunta si dos cosas son "diferentes".', expects: 'q2' }
+                            ]
+                        }
+                    },
+                    // --- MÓDULO 4 (Antes 3) ---
+                    {
+                        id: 'm4',
+                        title: 'Módulo 4: Decisiones (Lógica)',
+                        description: 'Enseña a tu programa a tomar decisiones con "Si..." y "Si no...".',
+                        icon: '🧠',
+                        unlocked: false,
+                        completed: false,
+                        progress: 0,
+                        lesson: {
+                            title: 'Caminos y Decisiones (Lógica `if`/`else`)',
+                            content: `
+                                <p class="mb-4">¡Excelente! Ahora que sabes "comparar" tesoros (Módulo 3) y obtener respuestas de <strong>Verdadero</strong> o <strong>Falso</strong>, ¡podemos usar esas respuestas para tomar decisiones!</p>
+                                <p class="mb-4">Imagina que llegas a una bifurcación en el camino.  La computadora te pregunta: "¿Tu respuesta es Verdadera?".</p>
+                                <p class="mb-4">Si dices "Verdadero", te vas por la izquierda. Si dices "Falso", te vas por la derecha. Para eso usamos <code>if</code> (SI...) y <code>else</code> (SI NO...).</p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>edad = 14\n\nif edad > 17:  # Esto es 'Falso' (14 no es > 17)\n  print("¡Puedes conducir!")\nelse:\n  print("¡Ups, aún no puedes conducir!")</code></pre>
+                                <p class="mb-4">Como la respuesta a <code>edad > 17</code> fue <strong>Falso</strong>, el robot ignora el bloque <code>if</code> y salta directo al bloque <code>else</code>.</p>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">¿Y si hay MÁS de dos caminos? Usamos \`elif\`</h4>
+                                <p class="mb-4">¿Qué pasa si tienes 3 opciones? (ej: "¡Muy alto!", "¡Muy bajo!", "¡Correcto!"). Para eso usamos <code>elif</code> (que es una mezcla de "else" + "if", y significa "si no, si...").</p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>nota = 8\n\nif nota == 10:\n  print("¡Perfecto!")\nelif nota > 6:\n  print("¡Muy bien!")\nelse:\n  print("¡Necesitas estudiar más!")</code></pre>
+                                <p class="text-lg font-medium text-emerald-300 mt-6">¡Vamos al laboratorio a enseñarle a tu robot a pensar!</p>
+                            `
+                        },
+                        lab: {
+                            title: 'Laboratorio: ¿Frío o Calor?',
+                            instructions: '1. Ya te dimos la caja: <code class="bg-gray-900 text-yellow-300 px-1 rounded">temperatura = 25</code>.\n2. Escribe una decisión <code class="bg-gray-900 text-yellow-300 px-1 rounded">if</code>/<code>else</code>:\n3. <strong>SI</strong> la <code>temperatura</code> es mayor (<code>></code>) a 20, imprime <code class="bg-gray-900 text-yellow-300 px-1 rounded">"¡Qué calor!"</code>.\n4. <strong>SI NO</strong> (<code>else</code>), imprime <code class="bg-gray-900 text-yellow-300 px-1 rounded">"¡Qué frío!"</code>.',
+                            codeTemplate: 'temperatura = 25\nif temperatura > 20:\n  print("¡Qué calor!")\nelse:\n  print("¡Qué frío!")',
+                            userCode: '',
+                            success: false
+                        },
+                        quiz: {
+                            title: 'Prueba Rápida: Arma la Decisión',
+                            instructions: 'Arrastra los bloques de código para construir una decisión lógica.',
+                            answered: false,
+                            dragItems: [
+                                { id: 'q1', text: 'if nota == 10:' },
+                                { id: 'q2', text: 'else:' },
+                                { id: 'q3', text: 'print("¡Perfecto!")' }
+                            ],
+                            dropTargets: [
+                                { id: 'a1', text: '...aquí va la condición: SI la nota es 10...', expects: 'q1' },
+                                { id: 'a2', text: '...esto se ejecuta SI la condición es VERDAD.', expects: 'q3' },
+                                { id: 'a3', text: '...esto se ejecuta SI NO se cumple la condición.', expects: 'q2' }
+                            ]
+                        }
+                    },
+                    // --- MÓDULO 5 (Antes 4) ---
+                    {
+                        id: 'm5',
+                        title: 'Módulo 5: ¡El Poder de Repetir!',
+                        description: 'Haz que la computadora repita tareas muchas veces.',
+                        icon: '🔄',
+                        unlocked: false,
+                        completed: false,
+                        progress: 0,
+                        lesson: {
+                            title: 'Bucles: ¡El poder de Repetir!',
+                            content: `
+                                <p class="mb-4">¡Este es uno de los poderes más grandes de la programación! ⚡️</p>
+                                <p class="mb-4">Imagina que tu entrenador te dice "¡Da 10 saltos!". ¿Qué haces? Saltas 10 veces. No te tienen que decir "salta, salta, salta, salta...".</p>
+                                <p class="mb-4">Un <strong>bucle</strong> (o "loop") es darle al robot una instrucción y decirle "¡Repite esto 10 veces!".</p>
+                                <p class="mb-4">Si quisieras imprimir "¡Hola!" 3 veces, podrías hacer esto:</p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>print("¡Hola!")\nprint("¡Hola!")\nprint("¡Hola!")</code></pre>
+                                <p class="mb-4">¡Pero eso es muy aburrido! 😴 Con un bucle <code>for</code>, es mucho más fácil: </p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>for i in range(3):
+  print("¡Hola!")</code></pre>
+                                <p class="mb-4">¡Desarmemos esto!</p>
+                                <ul>
+                                    <li class="ml-4 mb-2"><code>for i in range(3):</code> Es la magia. Significa "para cada número en un rango de 3 (o sea, 0, 1, 2)... repite lo de abajo".</li>
+                                    <li class="ml-4 mb-2"><code>print("¡Hola!")</code> Es la acción que se repite. Fíjate que tiene un espacio a la izquierda (se llama "indentación"). ¡Es súper importante para que el robot sepa QUÉ es lo que debe repetir!</li>
+                                </ul>
+                                <p class="text-lg font-medium text-emerald-300 mt-6">¡Vamos al laboratorio a usar este súper poder!</p>
+                            `
+                        },
+                        lab: {
+                            title: 'Laboratorio: Repeticiones',
+                            instructions: 'Usa un bucle <code class="bg-gray-900 text-yellow-300 px-1 rounded">for</code> y <code class="bg-gray-900 text-yellow-300 px-1 rounded">range(3)</code> para imprimir la palabra "Repite" exactamente 3 veces.',
+                            codeTemplate: 'for i in range(3):\n  print("Repite")',
+                            userCode: '',
+                            success: false
+                        },
+                        quiz: {
+                            title: 'Prueba Rápida: Arma el Bucle',
+                            instructions: 'Arrastra los componentes para construir un bucle que se repita 5 veces.',
+                            answered: false,
+                            dragItems: [
+                                { id: 'q1', text: 'for i in range(5):' },
+                                { id: 'q2', text: 'print("Vuelta")' }
+                            ],
+                            dropTargets: [
+                                { id: 'a1', text: '...la instrucción que dice "repetir 5 veces".', expects: 'q1' },
+                                { id: 'a2', text: '...la acción que se hace en cada repetición.', expects: 'q2' }
+                            ]
+                        }
+                    },
+                    // --- PROYECTO 1 ---
+                    {
+                        id: 'p1',
+                        title: 'Proyecto 1: ¡Adivina el Número!',
+                        description: '¡Usa todo lo aprendido para crear tu primer juego!',
+                        icon: '🎲',
+                        unlocked: false,
+                        completed: false,
+                        progress: 0,
+                        lesson: {
+                            title: 'Guía del Proyecto: Adivina el Número',
+                            content: `
+                                <p class="mb-4">¡Felicidades por llegar a los proyectos! Es hora de combinar todo.</p>
+                                <p class="mb-4">Vamos a crear un juego simple donde la computadora "piensa" en un número y el jugador tiene que adivinarlo.</p>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Paso 1: La Lógica 🧠</h4>
+                                <p class="mb-4">¿Qué necesitamos?
+                                    <ul class="list-disc list-inside mb-4 ml-4">
+                                        <li>Una "caja" (variable) para el número secreto que la computadora pensó.</li>
+                                        <li>Otra "caja" (variable) para el número que el jugador intenta.</li>
+                                        <li>Mucha lógica <code>if</code> para comparar los números.</li>
+                                    </ul>
+                                </p>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Paso 2: Las Cajas (Variables)</h4>
+                                <p class="mb-4">Para este laboratorio, vamos a hacer trampa y te daremos los números. Tu código empezará con:</p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>numero_secreto = 7\nintento_jugador = 5</code></pre>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Paso 3: Las Decisiones (Tu Misión)</h4>
+                                <p class="mb-4">Tu trabajo es escribir la lógica <code>if</code> / <code>elif</code> / <code>else</code>. ¿Qué pasa si el <code>intento_jugador</code> es <strong>exactamente igual</strong> (<code>==</code>) a <code>numero_secreto</code>? ¡Gana!</p>
+                                <p class="mb-4">¿Y si no? Tienes que darle una pista. Usa <code>elif</code> para preguntar si el intento fue <strong>mayor que</strong> (<code>></code>) el secreto. Y <code>else</code> para el caso final (¡si fue menor!).</p>
+                                <p class="text-lg font-medium text-emerald-300 mt-6">¡Vamos al laboratorio a construirlo!</p>
+                            `
+                        },
+                        lab: {
+                            title: 'Laboratorio: ¡Construye el Juego!',
+                            instructions: 'Ya tienes las variables: <code class="bg-gray-900 text-yellow-300 px-1 rounded">numero_secreto = 7</code> e <code class="bg-gray-900 text-yellow-300 px-1 rounded">intento_jugador = 5</code>.\nEscribe la lógica:\n1. <strong>SI</strong> el <code>intento_jugador</code> es igual (<code>==</code>) a <code>numero_secreto</code>, imprime "¡Adivinaste!".\n2. <strong>SI NO, SI</strong> (<code>elif</code>) el <code>intento_jugador</code> es mayor (<code>></code>) a <code>numero_secreto</code>, imprime "¡Muy alto!".\n3. <strong>SI NO</strong> (<code>else</code>), imprime "¡Muy bajo!".',
+                            codeTemplate: 'numero_secreto = 7\nintento_jugador = 5\n\nif intento_jugador == numero_secreto:\n  print("¡Adivinaste!")\nelif intento_jugador > numero_secreto:\n  print("¡Muy alto!")\nelse:\n  print("¡Muy bajo!")',
+                            userCode: '',
+                            success: false
+                        }
+                        // ¡Sin quiz! El laboratorio es la prueba.
+                    },
+                    // --- PROYECTO 2 ---
+                    {
+                        id: 'p2',
+                        title: 'Proyecto 2: Calculadora Sencilla',
+                        description: 'Crea una calculadora que sume y reste.',
+                        icon: '🧮',
+                        unlocked: false,
+                        completed: false,
+                        progress: 0,
+                        lesson: {
+                            title: 'Guía del Proyecto: Calculadora Sencilla',
+                            content: `
+                                <p class="mb-4">¡Excelente trabajo en el juego! Vamos por el último proyecto: una calculadora.</p>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Paso 1: La Lógica 🧠</h4>
+                                <p class="mb-4">Una calculadora necesita 3 cosas:
+                                    <ul class="list-disc list-inside mb-4 ml-4">
+                                        <li>Una "caja" para el primer número (ej: <code>num1</code>).</li>
+                                        <li>Una "caja" para el segundo número (ej: <code>num2</code>).</li>
+                                        <li>Una "caja" para saber qué operación hacer (ej: <code>"suma"</code> o <code>"resta"</code>).</li>
+                                    </ul>
+                                </p>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Paso 2: Las Cajas (Variables)</h4>
+                                <p class="mb-4">Para este laboratorio, te daremos estas cajas:</p>
+                                <pre class="bg-gray-800 p-3 rounded-lg text-yellow-300 mb-4"><code>num1 = 10\nnum2 = 5\noperacion = "suma"</code></pre>
+                                <h4 class="text-xl font-semibold text-white mt-6 mb-3">Paso 3: Las Decisiones (Tu Misión)</h4>
+                                <p class="mb-4">Tu trabajo es usar <code>if</code> / <code>elif</code> para revisar qué hay en la caja <code>operacion</code>.</p>
+                                <p class="mb-4"><strong>SI</strong> la <code>operacion</code> es <strong>exactamente igual</strong> (<code>==</code>) a <code>"suma"</code>, entonces imprime el resultado de <code>num1 + num2</code>.</p>
+                                <p class="mb-4"><strong>SI NO, SI</strong> (<code>elif</code>) la <code>operacion</code> es igual a <code>"resta"</code>, imprime el resultado de <code>num1 - num2</code>.</p>
+                                <p class="text-lg font-medium text-emerald-300 mt-6">¡Vamos al laboratorio a hacer los cálculos!</p>
+                            `
+                        },
+                        lab: {
+                            title: 'Laboratorio: ¡Construye la Calculadora!',
+                            instructions: 'Usando las variables <code class="bg-gray-900 text-yellow-300 px-1 rounded">num1 = 10</code>, <code class="bg-gray-900 text-yellow-300 px-1 rounded">num2 = 5</code>, y <code class="bg-gray-900 text-yellow-300 px-1 rounded">operacion = "suma"</code>:\n1. <strong>SI</strong> <code>operacion</code> es igual (<code>==</code>) a <code>"suma"</code>, imprime <code>num1 + num2</code>.\n2. <strong>SI NO, SI</strong> (<code>elif</code>) <code>operacion</code> es igual (<code>==</code>) a <code>"resta"</code>, imprime <code>num1 - num2</code>.',
+                            codeTemplate: 'num1 = 10\nnum2 = 5\noperacion = "suma"\n\nif operacion == "suma":\n  print(num1 + num2)\nelif operacion == "resta":\n  print(num1 - num2)',
+                            userCode: '',
+                            success: false
+                        }
+                        // ¡Sin quiz!
+                    }
+                ]
+            },
+
+            // 2. MÉTODOS DE LA APLICACIÓN
+
+            /**
+             * Se ejecuta cuando la página se carga por primera vez.
+             */
+            init() {
+                this.loadState(); // Carga el progreso desde localStorage
+                this.updateMainProgressBar(); // Actualiza la barra de progreso general
+                this.renderDashboard(); // Dibuja el panel de módulos
+                this.attachEventListeners(); // Prepara los eventos globales
+            },
+            
+            /**
+             * Prepara eventos que solo necesitan ser adjuntados una vez.
+             */
+            attachEventListeners() {
+                // El event delegation se usa para manejar clics en elementos
+                // que aún no existen (como los botones del módulo).
+                document.getElementById('app').addEventListener('click', (e) => {
+                    
+                    // Botón de Volver
+                    if (e.target.closest('#back-to-dashboard')) {
+                        this.showView('dashboard-view');
+                        this.state.currentModuleId = null;
+                        this.renderDashboard(); // Re-renderizar para mostrar progreso actualizado
+                    }
+                    
+                    // Pestañas del Módulo (Lección, Lab, Prueba)
+                    if (e.target.closest('.module-tab')) {
+                        const tab = e.target.closest('.module-tab');
+                        const targetPanelId = tab.dataset.target;
+                        this.activateModuleTab(tab, targetPanelId);
+                    }
+                    
+                    // Botón "Ejecutar" en el Laboratorio
+                    if (e.target.closest('#lab-run-btn')) {
+                        this.runLabCode();
+                    }
+                    
+                    // Botón "Limpiar" en el Laboratorio
+                    if (e.target.closest('#lab-clear-btn')) {
+                        this.clearLabConsole();
+                    }
+                    
+                    // Botón "Completar Módulo"
+                    if (e.target.closest('#complete-module-btn')) {
+                        this.completeModule();
+                    }
+                });
+            },
+
+            /**
+             * Dibuja la pantalla principal con los módulos.
+             */
+            renderDashboard() {
+                const grid = document.getElementById('module-grid');
+                grid.innerHTML = ''; // Limpia el panel
+                
+                // Separar módulos de aprendizaje y proyectos
+                const learningModules = this.state.modules.filter(m => !m.id.startsWith('p'));
+                const projectModules = this.state.modules.filter(m => m.id.startsWith('p'));
+
+                // Renderizar módulos de aprendizaje
+                learningModules.forEach(module => grid.appendChild(this.createModuleCard(module)));
+                
+                // Renderizar cabecera de proyectos si hay alguno desbloqueado
+                if (projectModules.some(p => p.unlocked)) {
+                    const header = document.createElement('h2');
+                    header.className = "text-2xl font-semibold text-gray-200 md:col-span-2 lg:col-span-3 mt-6";
+                    header.textContent = "Proyectos Finales";
+                    grid.appendChild(header);
+                }
+                
+                // Renderizar módulos de proyecto
+                projectModules.forEach(module => grid.appendChild(this.createModuleCard(module)));
+            },
+            
+            /**
+             * Crea el HTML para una tarjeta de módulo (refactorizado)
+             */
+            createModuleCard(module) {
+                const isLocked = !module.unlocked;
+                const card = document.createElement('div');
+                card.className = `
+                    p-6 rounded-lg shadow-lg flex flex-col justify-between
+                    transition-all duration-300 transform 
+                    ${isLocked 
+                        ? 'bg-gray-800 opacity-60 cursor-not-allowed' 
+                        : 'bg-gray-800 hover:bg-gray-700 hover:scale-[1.03] cursor-pointer'
+                    }
+                `;
+                
+                // Añadir evento de clic SOLO si no está bloqueado
+                if (!isLocked) {
+                    card.onclick = () => this.openModule(module.id);
+                }
+
+                // Icono de bloqueo
+                const lockIcon = `
+                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>`;
+                
+                // Icono de completado
+                const checkIcon = `
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-4xl">${module.icon}</span>
+                            ${isLocked ? lockIcon : (module.completed ? checkIcon : '')}
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">${module.title}</h3>
+                        <p class="text-gray-400 text-sm mb-4">${module.description}</p>
+                    </div>
+                    
+                    <!-- Mini-barra de progreso del módulo -->
+                    <div class="w-full bg-gray-600 rounded-full h-2.5">
+                        <div class="bg-blue-500 h-2.5 rounded-full" style="width: ${module.progress}%"></div>
+                    </div>
+                `;
+                return card;
+            },
+            
+            /**
+             * Abre un módulo específico y muestra su contenido.
+             */
+            openModule(moduleId) {
+                const module = this.state.modules.find(m => m.id === moduleId);
+                if (!module || !module.unlocked) return;
+
+                this.state.currentModuleId = moduleId;
+                const moduleView = document.getElementById('module-view');
+                
+                // Generar HTML para la vista del módulo
+                moduleView.innerHTML = `
+                    <!-- Cabecera del Módulo -->
+                    <div class="flex justify-between items-center mb-6">
+                        <button id="back-to-dashboard" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                            Volver al Panel
+                        </button>
+                        ${module.completed ? '<span class="text-emerald-400 font-medium">¡Completado!</span>' : ''}
+                    </div>
+                    
+                    <h2 class="text-3xl font-bold mb-4">${module.icon} ${module.title}</h2>
+
+                    <!-- Pestañas -->
+                    <div class="flex border-b border-gray-700 mb-6">
+                        <button data-target="lesson-panel" class="module-tab active-tab py-2 px-4 border-b-2 border-blue-400 text-white font-medium">
+                            ${module.id.startsWith('p') ? 'Guía del Proyecto' : 'Lección'}
+                        </button>
+                        <button data-target="lab-panel" class="module-tab py-2 px-4 text-gray-400 hover:text-white">
+                            Laboratorio
+                        </button>
+                        <button data-target="quiz-panel" class="module-tab py-2 px-4 text-gray-400 hover:text-white">
+                            ${module.id.startsWith('p') ? 'Completar' : 'Prueba'}
+                        </button>
+                    </div>
+
+                    <!-- Paneles de Contenido -->
+                    <div class="flex-1">
+                        <!-- Panel de Lección -->
+                        <div id="lesson-panel" class="module-panel active text-gray-300 leading-relaxed">
+                            <h3 class="text-2xl font-semibold mb-4 text-white">${module.lesson.title}</h3>
+                            ${module.lesson.content}
+                        </div>
+                        
+                        <!-- Panel de Laboratorio -->
+                        <div id="lab-panel" class="module-panel hidden">
+                            ${this.renderLab(module)}
+                        </div>
+                        
+                        <!-- Panel de Prueba -->
+                        <div id="quiz-panel" class="module-panel hidden">
+                            ${this.renderQuiz(module)}
+                        </div>
+                    </div>
+                    
+                    <!-- Botón de Completar (si aplica) -->
+                    <div id="complete-module-wrapper" class="mt-8 pt-6 border-t border-gray-700 text-center ${module.completed ? 'hidden' : ''}">
+                         <button id="complete-module-btn" 
+                                class="bg-gray-600 text-gray-400 font-bold py-3 px-6 rounded-lg cursor-not-allowed" 
+                                disabled>
+                            <!-- El texto se llenará con JS -->
+                         </button>
+                    </div>
+                `;
+                
+                // Mostrar la vista del módulo
+                this.showView('module-view');
+                this.activateModuleTab(moduleView.querySelector('.module-tab'), 'lesson-panel');
+                
+                // Auto-focus en el textarea del laboratorio si existe
+                const labInput = document.getElementById('lab-code-input');
+                if (labInput) {
+                    labInput.focus();
+                }
+
+                // --- LÓGICA PARA EL BOTÓN DE COMPLETAR ---
+                const completeBtn = document.getElementById('complete-module-btn');
+                let canComplete = false;
+                let btnText = '';
+
+                if (!module.quiz) { // Es un proyecto
+                    canComplete = module.lab.success;
+                    btnText = "Completa el Laboratorio para terminar";
+                } else { // Es un módulo normal
+                    canComplete = module.quiz.answered; // Asumimos que la prueba solo se marca 'answered' si está 100% correcta
+                    btnText = "Completa la Prueba para terminar";
+                }
+
+                if (canComplete && !module.completed) {
+                    completeBtn.disabled = false;
+                    completeBtn.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg";
+                    completeBtn.textContent = module.quiz ? "¡Completar Módulo y Avanzar!" : "¡Completar Proyecto y Avanzar!";
+                } else if (!module.completed) {
+                    completeBtn.textContent = btnText;
+                }
+            },
+            
+            /**
+             * Cambia la pestaña activa dentro de un módulo.
+             */
+            activateModuleTab(activeTab, targetPanelId) {
+                // Quitar clase activa de todas las pestañas y paneles
+                activeTab.parentElement.querySelectorAll('.module-tab').forEach(tab => {
+                    tab.classList.remove('active-tab', 'border-blue-400', 'text-white');
+                    tab.classList.add('text-gray-400', 'hover:text-white');
+                });
+                document.getElementById('module-view').querySelectorAll('.module-panel').forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+                
+                // Añadir clase activa a la pestaña y panel correctos
+                activeTab.classList.add('active-tab', 'border-blue-400', 'text-white');
+                activeTab.classList.remove('text-gray-400', 'hover:text-white');
+                document.getElementById(targetPanelId).classList.remove('hidden');
+
+                // Si se activa el panel del laboratorio, hacer focus en el textarea
+                if (targetPanelId === 'lab-panel') {
+                     const labInput = document.getElementById('lab-code-input');
+                    if (labInput) {
+                        labInput.focus();
+                    }
+                }
+            },
+            
+            /**
+             * Genera el HTML para el Laboratorio.
+             */
+            renderLab(module) {
+                // HTML para el laboratorio
+                return `
+                    <h3 class="text-2xl font-semibold mb-2 text-white">${module.lab.title}</h3>
+                    <p class="text-gray-400 mb-4 whitespace-pre-line">${module.lab.instructions}</p>
+                    
+                    <div class="w-full flex-1 flex flex-col">
+                        <!-- Consola Falsa (Ahora usa un TEXTAREA para teclado de PC) -->
+                        <div class="flex-1 flex flex-col">
+                            <div class="bg-black rounded-t-md p-3">
+                                <!-- Línea de "código" del usuario -->
+                                <div class="flex font-mono text-lg text-gray-100">
+                                    <span class="text-green-400 mr-2">&gt;</span>
+                                    <textarea id="lab-code-input" 
+                                              rows="6" 
+                                              class="flex-1 bg-transparent text-gray-100 p-0 border-0 focus:ring-0 resize-none outline-none" 
+                                              placeholder="Escribe tu código aquí..."
+                                              oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"
+                                              autofocus>${module.lab.userCode}</textarea>
+                                    <span class="fake-cursor"></span>
+                                </div>
+                            </div>
+                            <div id="lab-output" class="bg-gray-800 rounded-b-md p-4 h-48 overflow-y-auto font-mono text-sm text-gray-300 flex-1">
+                                <!-- La salida de la consola va aquí -->
+                            </div>
+                            <div class="flex gap-4 mt-4">
+                                <button id="lab-run-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                                    Ejecutar Código
+                                </button>
+                                <button id="lab-clear-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                                    Limpiar Consola
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            
+            /**
+             * Ejecuta el código del laboratorio y da retroalimentación.
+             */
+            runLabCode() {
+                const module = this.state.modules.find(m => m.id === this.state.currentModuleId);
+                if (!module) return; // Salir si no hay módulo
+                
+                const outputEl = document.getElementById('lab-output');
+                outputEl.innerHTML = ''; // Limpiar consola en cada ejecución
+                
+                // LEER DESDE EL TEXTAREA
+                const userCodeEl = document.getElementById('lab-code-input');
+                const userCode = userCodeEl.value.trim();
+                module.lab.userCode = userCode; // Guardar el intento del usuario
+                
+                // Normalizar saltos de línea para una comparación fiable
+                const correctCode = module.lab.codeTemplate.trim().replace(/\r\n/g, '\n');
+                const normalizedUserCode = userCode.replace(/\r\n/g, '\n');
+                
+                let outputMessage = '';
+                
+                if (normalizedUserCode === correctCode) {
+                    // Lógica de salida simulada
+                    if (module.id === 'm1') {
+                        outputMessage = '<span class="text-emerald-400">¡Hola, Mundo!</span>';
+                    } else if (module.id === 'm2') {
+                        outputMessage = '<span class="text-emerald-400">100</span>';
+                    } else if (module.id === 'm3') {
+                        outputMessage = 'True\nFalse';
+                        outputEl.innerHTML += `<p class="text-blue-400">Salida:</p><pre class="text-emerald-400 whitespace-pre-wrap">${outputMessage}</pre>`;
+                        this.logToLabConsole('<span class="text-yellow-300">¡Genial! Esas son las respuestas "Verdadero" y "Falso".</span>', false, true);
+                    } else if (module.id === 'm4') {
+                        outputMessage = '<span class="text-emerald-400">¡Qué calor!</span>';
+                    } else if (module.id === 'm5') {
+                        outputMessage = 'Repite\nRepite\nRepite';
+                        outputEl.innerHTML += `<p class="text-blue-400">Salida:</p><pre class="text-emerald-400 whitespace-pre-wrap">${outputMessage}</pre>`;
+                        this.logToLabConsole('<span class="text-yellow-300">¡Felicidades! ¡Tu primer bucle funciona!</span>', false, true);
+                    } else if (module.id === 'p1') {
+                        outputMessage = '<span class="text-emerald-400">¡Muy bajo!</span>';
+                    } else if (module.id === 'p2') {
+                        outputMessage = '<span class="text-emerald-400">15</span>';
+                    } else {
+                         outputMessage = '<span class="text-emerald-400">¡Correcto!</span>';
+                    }
+                    
+                    if (module.id !== 'm3' && module.id !== 'm5') { // m3 y m5 ya tienen log personalizado
+                        this.logToLabConsole(outputMessage, false);
+                        this.logToLabConsole('<span class="text-yellow-300">¡Felicidades! Código correcto.</span>', false);
+                    }
+
+                    // LÓGICA DE PROGRESO
+                    module.lab.success = true;
+
+                    if (!module.quiz) { // Es un proyecto
+                        module.progress = 100;
+                        this.logToLabConsole('<span class="text-yellow-300 font-bold">¡PROYECTO TERMINADO!</span><br><span>¡Haz clic en el botón "Completar Proyecto" de abajo!</span>', false, true);
+
+                        // Actualizar el botón de completar AHORA
+                        const completeBtn = document.getElementById('complete-module-btn');
+                        if (completeBtn && !module.completed) {
+                            completeBtn.disabled = false;
+                            completeBtn.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg";
+                            completeBtn.textContent = "¡Completar Proyecto y Avanzar!";
+                        }
+
+                    } else { // Es un módulo normal
+                        module.progress = Math.max(module.progress, 50); 
+                    }
+
+                    this.saveState();
+
+                } else {
+                    // Retroalimentación de error simple
+                    outputMessage = '<span class="text-red-400">Error: ¡Casi! Revisa tu código. Compara mayúsculas, espacios, sangría y saltos de línea con las instrucciones.</span>';
+                    this.logToLabConsole(outputMessage, true);
+                }
+            },
+            
+            logToLabConsole(message, isError, skipPrefix = false) {
+                const outputEl = document.getElementById('lab-output');
+                if (skipPrefix) {
+                     outputEl.innerHTML += `<p>${message}</p>`;
+                } else {
+                    const prefix = isError ? '<span class="text-red-500">SISTEMA:</span>' : '<span class="text-blue-400">Salida:</span>';
+                    outputEl.innerHTML += `<p>${prefix} ${message}</p>`;
+                }
+                outputEl.scrollTop = outputEl.scrollHeight; // Auto-scroll
+            },
+            
+            clearLabConsole() {
+                document.getElementById('lab-output').innerHTML = '';
+            },
+
+            /**
+             * Funciones para el Quiz de Arrastrar y Soltar
+             */
+            allowDrop(ev) {
+                ev.preventDefault(); // Necesario para permitir que se suelte un elemento
+                const dropTarget = ev.target.closest('.drop-target');
+                if (dropTarget && dropTarget.dataset.correct === "false") {
+                     dropTarget.classList.add('bg-gray-700'); // Resaltar al pasar por encima
+                }
+            },
+            
+            dragLeave(ev) {
+                const dropTarget = ev.target.closest('.drop-target');
+                if (dropTarget) {
+                     dropTarget.classList.remove('bg-gray-700');
+                }
+            },
+
+            drag(ev) {
+                // Almacena el ID del elemento que se está arrastrando
+                ev.dataTransfer.setData("text/plain", ev.target.id);
+            },
+
+            drop(ev) {
+                const dropTarget = ev.target.closest('.drop-target');
+                if (!dropTarget) return; // Si no se suelta en un objetivo válido
+
+                dropTarget.classList.remove('bg-gray-700'); // Quitar resaltado
+                ev.preventDefault();
+                const data = ev.dataTransfer.getData("text/plain");
+                const dragEl = document.getElementById(data);
+
+                // Comprobar si el ID del item arrastrado coincide con lo que espera el objetivo
+                if (dragEl.dataset.conceptId === dropTarget.dataset.expects) {
+                    // ¡Correcto!
+                    dropTarget.innerHTML = ''; // Limpiar "Suelta aquí..."
+                    dropTarget.appendChild(dragEl);
+                    dropTarget.classList.remove('border-gray-600', 'border-dashed', 'hover:bg-gray-700');
+                    dropTarget.classList.add('bg-emerald-900', 'border-emerald-700', 'p-4');
+                    dropTarget.dataset.correct = "true";
+                    
+                    dragEl.classList.remove('bg-gray-600', 'hover:bg-gray-500', 'cursor-move');
+                    dragEl.classList.add('bg-emerald-700', 'text-white', 'opacity-100', 'cursor-default', 'shadow-none');
+                    dragEl.draggable = false;
+                    
+                    // Comprobar si todos están correctos para habilitar el botón de envío
+                    this.checkQuizCompletion();
+                } else {
+                    // Incorrecto. Mostrar una breve sacudida o color
+                    dropTarget.classList.add('border-red-500');
+                    dragEl.classList.add('animate-shake'); // Animación de sacudida
+                    setTimeout(() => {
+                        dropTarget.classList.remove('border-red-500');
+                        dragEl.classList.remove('animate-shake');
+                    }, 500);
+                }
+            },
+            
+            checkQuizCompletion() {
+                const module = this.state.modules.find(m => m.id === this.state.currentModuleId);
+                if (!module || !module.quiz) return; // Salir si no hay módulo o no hay quiz
+                
+                const allDropTargets = document.querySelectorAll('.drop-target');
+                if (allDropTargets.length === 0) return; // No hay quiz en este módulo
+                
+                const allCorrect = Array.from(allDropTargets).every(target => target.dataset.correct === "true");
+
+                if (allCorrect) {
+                    module.quiz.answered = true; // Marcamos como respondido
+                    
+                    // Mostrar mensaje de éxito
+                    const resultsEl = document.getElementById('quiz-results');
+                    resultsEl.className = 'mt-6 p-4 rounded-lg bg-emerald-800 text-emerald-100';
+                    resultsEl.innerHTML = `
+                        <h4 class="font-bold text-lg">¡Excelente!</h4>
+                        <p>¡Has unido todos los conceptos correctamente! ¡Dominaste este módulo!</p>
+                    `;
+                    
+                    // Habilitar el botón de completar módulo
+                    const completeBtn = document.getElementById('complete-module-btn');
+                    completeBtn.disabled = false;
+                    completeBtn.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg";
+                    completeBtn.textContent = "¡Completar Módulo y Avanzar!";
+                    
+                    module.progress = 100;
+                    this.saveState();
+                }
+            },
+
+            /**
+             * Genera el HTML para la Prueba (Quiz) o la pantalla de completar proyecto.
+             */
+            renderQuiz(module) {
+                // Si el módulo no tiene quiz (es un proyecto)
+                if (!module.quiz) {
+                    return `
+                        <h3 class="text-2xl font-semibold mb-4 text-white">¡Laboratorio Final!</h3>
+                        <p class="text-gray-300 leading-relaxed">
+                            ¡Los proyectos no tienen examen! La verdadera prueba es completar el desafío del laboratorio. 
+                            <br><br>
+                            Cuando hayas completado el laboratorio (verás el mensaje de éxito en la consola), el botón de abajo se activará para que puedas continuar.
+                        </p>
+                    `;
+                }
+                
+                const quiz = module.quiz;
+                
+                // Generar items para arrastrar (en orden aleatorio)
+                const dragItemsHtml = [...quiz.dragItems]
+                    .sort(() => Math.random() - 0.5) 
+                    .map(item => `
+                    <div id="drag-${item.id}" 
+                         data-concept-id="${item.id}"
+                         class="drag-item bg-gray-600 hover:bg-gray-500 p-4 rounded-lg shadow-lg cursor-move transition-all"
+                         draggable="true" 
+                         ondragstart="app.drag(event)">
+                        ${item.text}
+                    </div>
+                `).join('');
+
+                // Generar zonas para soltar (en orden aleatorio)
+                const dropTargetsHtml = [...quiz.dropTargets]
+                    .sort(() => Math.random() - 0.5)
+                    .map(target => `
+                    <div class="flex items-center gap-4 mb-4 min-h-[5rem]">
+                        <div id="drop-${target.id}"
+                             data-expects="${target.expects}"
+                             data-correct="false"
+                             class="drop-target w-full md:w-64 h-20 flex-shrink-0 bg-gray-800 border-2 border-gray-600 border-dashed rounded-lg flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-700"
+                             ondragover="app.allowDrop(event)" 
+                             ondragleave="app.dragLeave(event)"
+                             ondrop="app.drop(event)">
+                            Suelta aquí...
+                        </div>
+                        <p class="text-gray-300 text-lg">${target.text}</p>
+                    </div>
+                `).join('');
+
+                return `
+                    <h3 class="text-2xl font-semibold mb-2 text-white">${quiz.title}</h3>
+                    <p class="text-gray-400 mb-6">${quiz.instructions}</p>
+                    
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <!-- Columna de Items para Arrastrar -->
+                        <div id="drag-container" class="w-full md:w-1/3 space-y-4 bg-gray-900 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-400 mb-3">Conceptos</h4>
+                            ${dragItemsHtml}
+                        </div>
+                        
+                        <!-- Columna de Zonas para Soltar -->
+                        <div class="w-full md:w-2/3 space-y-4">
+                            ${dropTargetsHtml}
+                        </div>
+                    </div>
+                    
+                    <div id="quiz-results" class="mt-6"></div>
+                `;
+            },
+            
+            /**
+             * Marca el módulo como completado y desbloquea el siguiente.
+             */
+            completeModule() {
+                const moduleIndex = this.state.modules.findIndex(m => m.id === this.state.currentModuleId);
+                if (moduleIndex === -1) return;
+                
+                // Marcar actual como completado
+                this.state.modules[moduleIndex].completed = true;
+                this.state.modules[moduleIndex].progress = 100;
+                
+                // Desbloquear el siguiente módulo (si existe)
+                const nextModule = this.state.modules[moduleIndex + 1];
+                if (nextModule) {
+                    nextModule.unlocked = true;
+                }
+                
+                this.updateMainProgressBar();
+                this.saveState();
+                
+                // Volver al panel
+                this.showView('dashboard-view');
+                this.state.currentModuleId = null;
+                this.renderDashboard();
+            },
+
+            /**
+             * Cambia entre la vista del panel y la del módulo.
+             */
+            showView(viewId) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+            },
+
+            /**
+             * Guarda el estado actual en localStorage.
+             */
+            saveState() {
+                try {
+                    localStorage.setItem('codeAdventureState', JSON.stringify(this.state));
+                } catch (e) {
+                    console.error("No se pudo guardar el estado:", e);
+                }
+            },
+
+            /**
+             * Carga el estado desde localStorage.
+             */
+            loadState() {
+                const savedState = localStorage.getItem('codeAdventureState');
+                if (savedState) {
+                    try {
+                        const loadedState = JSON.parse(savedState);
+                        // Fusionar el estado guardado con el estado por defecto
+                        // Esto asegura que si añadimos nuevos módulos en el código, aparezcan
+                        const defaultState = this.state;
+                        
+                        // Recorrer los módulos por defecto y actualizarlos con el estado guardado
+                        defaultState.modules.forEach(defaultModule => {
+                             const savedModule = loadedState.modules.find(m => m.id === defaultModule.id);
+                             if (savedModule) {
+                                // Sobrescribir el módulo por defecto con el progreso guardado
+                                // PERO mantener el contenido de la lección/lab/quiz del código
+                                const lessonContent = defaultModule.lesson;
+                                const labContent = defaultModule.lab;
+                                const quizContent = defaultModule.quiz;
+                                
+                                Object.assign(defaultModule, savedModule);
+                                
+                                // Restaurar el contenido original para que las actualizaciones de código se reflejen
+                                defaultModule.lesson = lessonContent;
+                                defaultModule.lab = { ...labContent, userCode: savedModule.lab.userCode || '', success: savedModule.lab.success || false };
+                                if (defaultModule.quiz) {
+                                    defaultModule.quiz = { ...quizContent, answered: savedModule.quiz.answered || false };
+                                }
+                             }
+                        });
+                        
+                        this.state.totalProgress = loadedState.totalProgress || 0;
+                        
+                    } catch (e) {
+                        console.error("No se pudo cargar el estado, reiniciando:", e);
+                        this.saveState(); // Guardar el estado por defecto si el guardado está corrupto
+                    }
+                } else {
+                    // Si no, guarda el estado por defecto
+                    this.saveState();
+                }
+            },
+            
+            /**
+             * Actualiza la barra de progreso general.
+             */
+            updateMainProgressBar() {
+                const completedModules = this.state.modules.filter(m => m.completed).length;
+                const totalModules = this.state.modules.length;
+                const progress = totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
+                
+                this.state.totalProgress = progress;
+                
+                document.getElementById('main-progress-bar').style.width = `${progress}%`;
+                document.getElementById('main-progress-text').textContent = `${Math.round(progress)}%`;
+            },
+            
+            /**
+             * Reinicia todo el progreso (para pruebas).
+             */
+            resetProgress() {
+                if (confirm('¿Estás seguro de que quieres borrar todo tu progreso? Esto es irreversible.')) {
+                    localStorage.removeItem('codeAdventureState');
+                    // Recargar la página para obtener un estado limpio
+                    location.reload();
+                }
+            }
+        };
+
+        // Iniciar la aplicación cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
